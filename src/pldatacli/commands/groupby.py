@@ -1,7 +1,8 @@
+import polars as pl
 from pldatacli.parsers.agg_parser import parse_aggs
 
 
-def apply_groupby(lf, groupby_cols, agg_strings):
+def apply_groupby(lf: pl.LazyFrame, groupby_cols, agg_strings):
 
     if not groupby_cols:
         return lf
