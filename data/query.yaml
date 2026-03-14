@@ -1,0 +1,15 @@
+# monthly_west_profit.yaml
+file: Superstore.csv
+filter:
+  - "Region=West"
+truncate: "Order Date:month"
+groupby:
+  - "Order Date_month"
+  - Category
+agg:
+  - "Profit:sum,mean"
+  - "Sales:sum"
+sort: "Profit_sum:desc"
+head: 10
+round: 2
+output: monthly_west.csv

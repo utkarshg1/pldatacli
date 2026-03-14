@@ -259,6 +259,38 @@ pldatacli query SampleSuperstore.csv \
 
 ---
 
+### Run query from YAML file
+
+Save a reusable query as a YAML file and run it with a single command.
+
+```bash
+pldatacli run query.yaml
+```
+
+Example `query.yaml`:
+
+```yaml
+file: Superstore.csv
+filter:
+  - "Region:West"
+truncate: "Order Date:month"
+groupby:
+  - "Order Date_month"
+  - Category
+agg:
+  - "Profit:sum,mean"
+  - "Sales:sum"
+sort:
+  - "Profit_sum:desc"
+head: 10
+round: 2
+output: monthly_west.csv
+```
+
+> ⚡ Tip: Store your YAML query files in version control alongside your data pipelines for reproducible analysis.
+
+---
+
 ### Schema inspection
 
 Get columns, dtypes, and null counts without processing the full dataset:

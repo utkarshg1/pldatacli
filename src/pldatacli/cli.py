@@ -10,6 +10,7 @@ from pldatacli.commands.limit import apply_limit
 from pldatacli.commands.rounding import apply_round
 from pldatacli.commands.schema import schema_command
 from pldatacli.commands.export import apply_export
+from pldatacli.commands.run import run_from_yaml
 from pldatacli.render.table import render_df, render_schema
 
 app = typer.Typer()
@@ -46,3 +47,8 @@ def schema(file: Path):
     lf = load_lazyframe(file)
     sch, null_count, row_count = schema_command(lf)
     render_schema(sch, null_count, row_count)
+
+
+@app.command()
+def run(yaml_file: Path):
+    run_from_yaml(yaml_file)
