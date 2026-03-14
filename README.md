@@ -31,9 +31,20 @@ uv tool install pldatacli
 
 ---
 
+# Commands
+
+| Command  | Description                                              |
+|----------|----------------------------------------------------------|
+| `query`  | Filter, aggregate, sort, and explore a single file       |
+| `schema` | Inspect columns, dtypes, and null counts                 |
+| `run`    | Execute a multi-step pipeline defined in a YAML file     |
+| `sql`    | Run arbitrary SQL queries against one or more files      |
+
+---
+
 # Usage
 
-### Basic query command
+## `query` — Exploratory Analysis
 
 ```bash
 pldatacli query FILE [OPTIONS]
@@ -62,6 +73,13 @@ Multiple filters:
 pldatacli query SampleSuperstore.csv \
   --filter "State:Texas" \
   --filter "Category:Furniture"
+```
+
+Numeric filter:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --filter "Sales > 500"
 ```
 
 ---
@@ -134,7 +152,7 @@ pldatacli query SampleSuperstore.csv \
   --agg "Profit:sum"
 ```
 
-Multiple aggregations:
+Multiple aggregations on one column:
 
 ```bash
 pldatacli query SampleSuperstore.csv \
@@ -259,39 +277,7 @@ pldatacli query SampleSuperstore.csv \
 
 ---
 
-### Run query from YAML file
-
-Save a reusable query as a YAML file and run it with a single command.
-
-```bash
-pldatacli run query.yaml
-```
-
-Example `query.yaml`:
-
-```yaml
-file: Superstore.csv
-filter:
-  - "Region:West"
-truncate: "Order Date:month"
-groupby:
-  - "Order Date_month"
-  - Category
-agg:
-  - "Profit:sum,mean"
-  - "Sales:sum"
-sort:
-  - "Profit_sum:desc"
-head: 10
-round: 2
-output: monthly_west.csv
-```
-
-> ⚡ Tip: Store your YAML query files in version control alongside your data pipelines for reproducible analysis.
-
----
-
-### Schema inspection
+## `schema` — Inspect File Structure
 
 Get columns, dtypes, and null counts without processing the full dataset:
 
@@ -324,3 +310,129 @@ Rows: 9994, Columns: 13
 ```
 
 > ⚡ Tip: Use `schema` before running queries to quickly inspect columns, types, and missing values.
+
+---
+
+## `run` — YAML Pipelines
+
+Execute a reusable, multi-step analysis defined in a YAML file:
+
+```bash
+pldatacli run query.yaml
+```
+
+Example `query.yaml`:
+
+```yaml
+file: Superstore.csv
+filter:
+  - "Region:West"
+truncate: "Order Date:month"
+groupby:
+  - "Order Date_month"
+  - Category
+agg:
+  - "Profit:sum,mean"
+  - "Sales:sum"
+sort:
+  - "Profit_sum:desc"
+head: 10
+round: 2
+output: monthly_west.csv
+```
+
+> ⚡ Tip: Store your YAML query files in version control alongside your data pipelines for reproducible analysis.
+
+---
+
+## `sql` — Ad-hoc SQL Queries
+
+Run arbitrary Polars SQL queries against one or more files.
+
+```bash
+pldatacli sql FILE [FILES...] [OPTIONS]
+```
+
+The **first file** is always registered as the table `data`. Additional files are registered using their filename stem (lowercased, sanitized).
+
+---
+
+### Single file query
+
+```bash
+pldatacli sql Superstore.csv \
+  -q "SELECT Category, SUM(Profit) AS total_profit FROM data GROUP BY Category ORDER BY total_profit DESC"
+```
+
+---
+
+### Multi-file JOIN
+
+```bash
+pldatacli sql orders.csv customers.csv \
+  -q "SELECT * FROM data o JOIN customers c ON o.customer_id = c.id LIMIT 100"
+```
+
+---
+
+### Load SQL from a file
+
+```bash
+pldatacli sql sales.parquet \
+  --sql-file complex_query.sql
+```
+
+> ⚡ Tip: Use `--sql-file` to keep complex queries in `.sql` files for readability and reuse. You cannot use `--sql` and `--sql-file` together.
+
+---
+
+### Limit output rows
+
+```bash
+pldatacli sql Superstore.csv \
+  -q "SELECT * FROM data" \
+  --head 20
+```
+
+```bash
+pldatacli sql Superstore.csv \
+  -q "SELECT * FROM data" \
+  --tail 10
+```
+
+---
+
+### Save SQL results to file
+
+```bash
+pldatacli sql Superstore.csv \
+  -q "SELECT Region, SUM(Sales) AS total_sales FROM data GROUP BY Region" \
+  --output result.parquet
+```
+
+---
+
+### Full SQL example
+
+```bash
+pldatacli sql orders.csv customers.csv \
+  --sql-file analysis.sql \
+  --head 50 \
+  --output joined_results.csv
+```
+
+---
+
+# Version
+
+Check the installed version:
+
+```bash
+pldatacli --version
+```
+
+or
+
+```bash
+pldatacli -v
+```
