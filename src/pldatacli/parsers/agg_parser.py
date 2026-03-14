@@ -20,7 +20,7 @@ def parse_aggs(agg_strings):
     exprs = []
 
     for a in agg_strings:
-        col, ops = a.split("=")
+        col, ops = a.split(":")
 
         for op in ops.split(","):
             exprs.append(AGG_MAP[op](col).alias(f"{col}_{op}"))

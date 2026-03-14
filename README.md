@@ -24,10 +24,12 @@ Check the Repository on PyPI - [https://pypi.org/project/pldatacli/](https://pyp
 ```bash
 pip install pldatacli
 ```
-* Option2 : with uv package manager (Requires uv to be installed)
+* Option 2: with uv package manager (Requires uv to be installed)
 ```bash
 uv tool install pldatacli
 ```
+
+---
 
 # Usage
 
@@ -51,15 +53,46 @@ Single filter:
 
 ```bash
 pldatacli query SampleSuperstore.csv \
-  --filter "State=Texas"
+  --filter "State:Texas"
 ```
 
 Multiple filters:
 
 ```bash
 pldatacli query SampleSuperstore.csv \
-  --filter "State=Texas" \
-  --filter "Category=Furniture"
+  --filter "State:Texas" \
+  --filter "Category:Furniture"
+```
+
+---
+
+### Truncate date column
+
+Truncate a date column into a period-based group. Format: `col:period`
+
+Supported periods: `year`, `quarter`, `month`, `week`, `day`
+
+This creates a new derived column named `<col>_<period>` that can be used in `--groupby`.
+
+By month:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --truncate "Order Date:month"
+```
+
+By quarter:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --truncate "Order Date:quarter"
+```
+
+By year:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --truncate "Order Date:year"
 ```
 
 ---
@@ -81,6 +114,14 @@ pldatacli query SampleSuperstore.csv \
   --groupby Category
 ```
 
+Group by truncated date column:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --truncate "Order Date:month" \
+  --groupby "Order Date_month"
+```
+
 ---
 
 ### Aggregations
@@ -90,7 +131,7 @@ Single aggregation:
 ```bash
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
-  --agg "Profit=sum"
+  --agg "Profit:sum"
 ```
 
 Multiple aggregations:
@@ -98,7 +139,7 @@ Multiple aggregations:
 ```bash
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
-  --agg "Profit=sum,mean"
+  --agg "Profit:sum,mean"
 ```
 
 Multiple columns with aggregations:
@@ -107,8 +148,8 @@ Multiple columns with aggregations:
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --groupby Category \
-  --agg "Sales=sum,mean" \
-  --agg "Profit=sum"
+  --agg "Sales:sum,mean" \
+  --agg "Profit:sum"
 ```
 
 ---
@@ -120,7 +161,7 @@ Single sort:
 ```bash
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
-  --agg "Profit=sum" \
+  --agg "Profit:sum" \
   --sort "Profit_sum:desc"
 ```
 
@@ -129,7 +170,7 @@ Multiple sorts:
 ```bash
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
-  --agg "Profit=sum" \
+  --agg "Profit:sum" \
   --sort "Region:asc" \
   --sort "Profit_sum:desc"
 ```
@@ -143,7 +184,7 @@ Round float columns to 2 digits:
 ```bash
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
-  --agg "Profit=mean" \
+  --agg "Profit:mean" \
   --round 2
 ```
 
@@ -152,7 +193,7 @@ Custom rounding:
 ```bash
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
-  --agg "Profit=mean" \
+  --agg "Profit:mean" \
   --round 4
 ```
 
@@ -176,16 +217,44 @@ pldatacli query SampleSuperstore.csv \
 
 ---
 
-### Full query example
+### Save output to file
+
+Save results as CSV:
 
 ```bash
 pldatacli query SampleSuperstore.csv \
   --groupby Region \
+  --agg "Profit:sum" \
+  --output result.csv
+```
+
+Save results as Parquet:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --groupby Region \
+  --agg "Profit:sum" \
+  --output result.parquet
+```
+
+> ⚡ Tip: Results are always printed to the terminal **and** saved to file simultaneously.
+
+---
+
+### Full query example
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --filter "Region:West" \
+  --truncate "Order Date:month" \
+  --groupby "Order Date_month" \
   --groupby Category \
-  --agg "Profit=sum,mean" \
+  --agg "Profit:sum,mean" \
+  --agg "Sales:sum" \
   --sort "Profit_sum:desc" \
-  --head 5 \
-  --round 2
+  --head 10 \
+  --round 2 \
+  --output monthly_west.csv
 ```
 
 ---
@@ -223,5 +292,3 @@ Rows: 9994, Columns: 13
 ```
 
 > ⚡ Tip: Use `schema` before running queries to quickly inspect columns, types, and missing values.
-
----
