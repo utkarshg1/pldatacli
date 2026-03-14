@@ -28,6 +28,11 @@ pip install pldatacli
 ```bash
 uv tool install pldatacli
 ```
+* Option 3: with homebrew tap (Requires homebrew installed)
+```bash
+brew tap utkarshg1/pldatacli
+brew install pldatacli
+```
 
 ---
 
