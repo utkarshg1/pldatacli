@@ -9,6 +9,6 @@ def apply_agg(lf: pl.LazyFrame, agg_strings, groupby_cols=None):
     agg_exprs = parse_aggs(agg_strings)
 
     if groupby_cols:
-        return lf.agg(agg_exprs)
+        return lf.group_by(groupby_cols).agg(agg_exprs)
 
     return lf.select(agg_exprs)

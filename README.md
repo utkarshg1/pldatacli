@@ -1,6 +1,6 @@
 # pldatacli
 
-A simple command-line tool for quick CSV data analysis.
+A simple command-line tool for quick CSV data analysis using Polars, with lazy execution for efficiency.
 
 ---
 
@@ -12,12 +12,29 @@ A simple command-line tool for quick CSV data analysis.
 
 ---
 
+# PyPi Repository
+
+Check the Repository on PyPI - [https://pypi.org/project/pldatacli/](https://pypi.org/project/pldatacli/)
+
+---
+
+# Installation
+
+* Option 1: Directly with pip
+```bash
+pip install pldatacli
+```
+* Option2 : with uv package manager (Requires uv to be installed)
+```bash
+uv tool install pldatacli
+```
+
 # Usage
 
-### Basic command
+### Basic query command
 
 ```bash
-pldatacli FILE [OPTIONS]
+pldatacli query FILE [OPTIONS]
 ```
 
 Example file:
@@ -30,15 +47,17 @@ SampleSuperstore.csv
 
 ### Filter rows
 
+Single filter:
+
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --filter "State=Texas"
 ```
 
 Multiple filters:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --filter "State=Texas" \
   --filter "Category=Furniture"
 ```
@@ -50,14 +69,14 @@ pldatacli SampleSuperstore.csv \
 Single column:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region
 ```
 
 Multiple columns:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --groupby Category
 ```
@@ -66,8 +85,10 @@ pldatacli SampleSuperstore.csv \
 
 ### Aggregations
 
+Single aggregation:
+
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --agg "Profit=sum"
 ```
@@ -75,7 +96,7 @@ pldatacli SampleSuperstore.csv \
 Multiple aggregations:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --agg "Profit=sum,mean"
 ```
@@ -83,7 +104,7 @@ pldatacli SampleSuperstore.csv \
 Multiple columns with aggregations:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --groupby Category \
   --agg "Sales=sum,mean" \
@@ -94,8 +115,10 @@ pldatacli SampleSuperstore.csv \
 
 ### Sorting
 
+Single sort:
+
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --agg "Profit=sum" \
   --sort "Profit_sum:desc"
@@ -104,7 +127,7 @@ pldatacli SampleSuperstore.csv \
 Multiple sorts:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --agg "Profit=sum" \
   --sort "Region:asc" \
@@ -115,10 +138,10 @@ pldatacli SampleSuperstore.csv \
 
 ### Rounding results
 
-Round float columns to **2 digits**:
+Round float columns to 2 digits:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --agg "Profit=mean" \
   --round 2
@@ -127,7 +150,7 @@ pldatacli SampleSuperstore.csv \
 Custom rounding:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --agg "Profit=mean" \
   --round 4
@@ -135,13 +158,70 @@ pldatacli SampleSuperstore.csv \
 
 ---
 
-### Full example
+### Limiting rows
+
+Head:
 
 ```bash
-pldatacli SampleSuperstore.csv \
+pldatacli query SampleSuperstore.csv \
+  --head 5
+```
+
+Tail:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --tail 10
+```
+
+---
+
+### Full query example
+
+```bash
+pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --groupby Category \
   --agg "Profit=sum,mean" \
   --sort "Profit_sum:desc" \
+  --head 5 \
   --round 2
 ```
+
+---
+
+### Schema inspection
+
+Get columns, dtypes, and null counts without processing the full dataset:
+
+```bash
+pldatacli schema SampleSuperstore.csv
+```
+
+Example output:
+
+```text
+LazyFrame Schema
+┏━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┓
+┃ Column       ┃ Dtype   ┃ Nulls ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━┩
+│ Ship Mode    │ String  │     0 │
+│ Segment      │ String  │     0 │
+│ Country      │ String  │     0 │
+│ City         │ String  │     0 │
+│ State        │ String  │     0 │
+│ Postal Code  │ Int64   │     0 │
+│ Region       │ String  │     0 │
+│ Category     │ String  │     0 │
+│ Sub-Category │ String  │     0 │
+│ Sales        │ Float64 │     0 │
+│ Quantity     │ Int64   │     0 │
+│ Discount     │ Float64 │     0 │
+│ Profit       │ Float64 │     0 │
+└──────────────┴─────────┴───────┘
+Rows: 9994, Columns: 13
+```
+
+> ⚡ Tip: Use `schema` before running queries to quickly inspect columns, types, and missing values.
+
+---
