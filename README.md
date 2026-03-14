@@ -263,7 +263,7 @@ pldatacli query SampleSuperstore.csv \
 
 ```bash
 pldatacli query SampleSuperstore.csv \
-  --filter "Region:West" \
+  --filter "Region=West" \
   --truncate "Order Date:month" \
   --groupby "Order Date_month" \
   --groupby Category \
@@ -326,7 +326,7 @@ Example `query.yaml`:
 ```yaml
 file: Superstore.csv
 filter:
-  - "Region:West"
+  - "Region=West"
 truncate: "Order Date:month"
 groupby:
   - "Order Date_month"
