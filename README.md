@@ -45,6 +45,7 @@ brew install pldatacli
 | `run`    | Execute a multi-step pipeline defined in a YAML file     |
 | `sql`    | Run arbitrary SQL queries against one or more files      |
 | `pivot`  | Create pivot tables with flexible aggregations           |
+| `init`   | Generate a boilerplate YAML pipeline file                |
 
 ---
 
@@ -327,7 +328,7 @@ Execute a reusable, multi-step analysis defined in a YAML file:
 pldatacli run query.yaml
 ```
 
-Example `query.yaml`:
+**Option 1** — Aggregation pipeline (`query.yaml`):
 
 ```yaml
 file: Superstore.csv
@@ -347,7 +348,7 @@ round: 2
 output: monthly_west.csv
 ```
 
-Example: `pivot.yaml`
+**Option 2** — Pivot pipeline (`pivot.yaml`):
 
 ```yaml
 file: Superstore.csv
@@ -358,7 +359,10 @@ pivot:
   values: "Profit"
   aggregate: "sum"
 round: 2
+output: pivot_result.csv
 ```
+
+> `index` accepts a single string or a list of strings for multi-index pivots.
 
 > ⚡ Tip: Store your YAML query files in version control alongside your data pipelines for reproducible analysis.
 
@@ -570,6 +574,82 @@ pldatacli pivot SampleSuperstore.csv \
   --round 1 \
   --output quarterly_pivot.csv
 ```
+
+---
+
+## `init` — Generate Boilerplate YAML
+
+Generate a ready-to-edit YAML pipeline file with commented examples:
+
+```bash
+pldatacli init TEMPLATE [OPTIONS]
+```
+
+Accepts `query` or `pivot` as the template type. Will not overwrite an existing file — use `--output` to choose a different path.
+
+---
+
+### Generate a query pipeline
+
+```bash
+pldatacli init query
+```
+
+Creates `query.yaml`:
+
+```yaml
+file: data.csv
+filter:
+  - "Column=Value"
+  - "Sales > 100"
+truncate: "Order Date:month"   # periods: year, quarter, month, week, day
+groupby:
+  - "Order Date_month"
+  - Category
+agg:
+  - "Profit:sum,mean"
+  - "Sales:sum"
+sort:
+  - "Profit_sum:desc"
+head: 10
+round: 2
+output: result.csv
+```
+
+---
+
+### Generate a pivot pipeline
+
+```bash
+pldatacli init pivot
+```
+
+Creates `pivot.yaml`:
+
+```yaml
+file: data.csv
+truncate: "Order Date:month"   # periods: year, quarter, month, week, day — optional
+pivot:
+  column: "Category"           # unique values of this column become new columns
+  index:                       # row grouping — single string or list
+    - "Order Date_month"
+    - Region
+  values: "Sales"              # column to aggregate
+  aggregate: "sum"             # sum, mean, min, max, first, last, median, count, len
+round: 2
+output: pivot_result.csv
+```
+
+---
+
+### Custom output path
+
+```bash
+pldatacli init query --output my_analysis.yaml
+pldatacli init pivot --output my_pivot.yaml
+```
+
+> ⚡ Tip: Run `pldatacli init query` or `pldatacli init pivot` at the start of a new analysis to get a fully commented template, then edit it and run with `pldatacli run`.
 
 ---
 
