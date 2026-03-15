@@ -22,7 +22,7 @@ Check the Repository on PyPI - [https://pypi.org/project/pldatacli/](https://pyp
 
 * Option 1: With pipx (Requires pipx to be installed)
 ```bash
-pip install pldatacli
+pipx install pldatacli
 ```
 * Option 2: with uv package manager (Requires uv to be installed)
 ```bash
