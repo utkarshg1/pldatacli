@@ -97,6 +97,12 @@ def query(
         "-o",
         help="Save result to file (csv/parquet/... by extension)",
     ),
+    generate_yaml: Optional[Path] = typer.Option(
+        None,
+        "--generate-yaml",
+        "-y",
+        help="Also generate equivalent YAML pipeline (in addition to showing results).",
+    ),
 ):
     """
     Quick exploratory analysis on a single file using filters, aggregations, sorting, etc.
@@ -115,6 +121,22 @@ def query(
     df = lf.collect()
     render_df(df)
     apply_export(df, output)
+    if generate_yaml is not None:
+        from pldatacli.commands.generate_yaml import generate_query_yaml
+
+        generate_query_yaml(
+            file=file,
+            filter=filter,
+            truncate=truncate,
+            groupby=groupby,
+            agg=agg,
+            sort=sort,
+            head=head,
+            tail=tail,
+            round_digits=round_digits,
+            output=output,  # your existing --output
+            yaml_path=generate_yaml,
+        )
 
 
 @app.command()
@@ -276,6 +298,12 @@ def pivot(
     output: Optional[Path] = typer.Option(
         None, "--output", "-o", help="Save result (csv/parquet/… by extension)"
     ),
+    generate_yaml: Optional[Path] = typer.Option(
+        None,
+        "--generate-yaml",
+        "-y",
+        help="Also generate equivalent YAML pipeline (in addition to showing results).",
+    ),
 ):
     """
     Create a pivot table (like spreadsheet pivot / pandas pivot_table).
@@ -295,6 +323,20 @@ def pivot(
         round_digits=round_digits,
         output=output,
     )
+    if generate_yaml is not None:
+        from pldatacli.commands.generate_yaml import generate_pivot_yaml
+
+        generate_pivot_yaml(
+            file=file,
+            truncate=truncate,
+            on=on,
+            index=index,
+            values=values,
+            aggregate=aggregate,
+            round_digits=round_digits,
+            output=output,
+            yaml_path=generate_yaml,
+        )
 
 
 if __name__ == "__main__":
