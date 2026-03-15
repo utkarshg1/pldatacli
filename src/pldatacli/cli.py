@@ -1,6 +1,6 @@
 import typer
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 from pldatacli.io.loader import load_lazyframe
 from pldatacli.commands.filter import apply_filters
@@ -12,6 +12,7 @@ from pldatacli.commands.rounding import apply_round
 from pldatacli.commands.schema import schema_command
 from pldatacli.commands.export import apply_export
 from pldatacli.commands.run import run_from_yaml
+from pldatacli.commands.init import init_command
 from pldatacli.render.table import render_df, render_schema
 from pldatacli.commands.sql import run_sql
 from pldatacli.commands.pivot import pivot_command
@@ -144,6 +145,38 @@ def run(
         pldatacli run analysis.yaml
     """
     run_from_yaml(yaml_file)
+
+
+@app.command()
+def init(
+    template: Literal["query", "pivot"] = typer.Argument(
+        ...,
+        help="Type of YAML pipeline to generate. 'query' for filter/aggregate/sort pipelines, 'pivot' for pivot table pipelines.",
+    ),
+    output: Optional[str] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output file path. Defaults to 'query.yaml' for query template and 'pivot.yaml' for pivot template.",
+    ),
+):
+    """
+    Generate a boilerplate YAML pipeline file with commented examples.
+
+    Creates a ready-to-edit YAML file for use with `pldatacli run`.
+    Will not overwrite an existing file — use --output to choose a different path.
+
+    Examples:
+
+        pldatacli init query
+
+        pldatacli init pivot
+
+        pldatacli init query --output my_analysis.yaml
+
+        pldatacli init pivot --output my_pivot.yaml
+    """
+    init_command(template, output)
 
 
 @app.command()

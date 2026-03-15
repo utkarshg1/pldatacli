@@ -1,0 +1,11 @@
+file: data.csv
+truncate: "Order Date:month"   # periods: year, quarter, month, week, day — optional
+pivot:
+  column: "Category"           # unique values of this column become new columns
+  index:                       # row grouping — single string or list
+    - "Order Date_month"
+    - Region
+  values: "Sales"              # column to aggregate
+  aggregate: "sum"             # sum, mean, min, max, first, last, median, count, len
+round: 2
+output: pivot_result.parquet   # Can save to csv or parquet
