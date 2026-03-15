@@ -266,6 +266,40 @@ pldatacli query SampleSuperstore.csv \
 
 ---
 
+### Generate YAML pipeline from query
+
+Use `--generate-yaml` (or `-y`) to export the current query as a reusable YAML pipeline file. The results are still printed to the terminal as normal — the YAML is generated alongside.
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --groupby Region \
+  --agg "Profit:sum" \
+  --generate-yaml my_pipeline.yaml
+```
+
+With a full query:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --filter "Region=West" \
+  --truncate "Order Date:month" \
+  --groupby "Order Date_month" \
+  --groupby Category \
+  --agg "Profit:sum,mean" \
+  --agg "Sales:sum" \
+  --sort "Profit_sum:desc" \
+  --head 10 \
+  --round 2 \
+  --output monthly_west.csv \
+  --generate-yaml monthly_west.yaml
+```
+
+The generated YAML can then be run directly with `pldatacli run monthly_west.yaml`.
+
+> ⚡ Tip: Use `--generate-yaml` to capture ad-hoc queries as reproducible pipeline files for version control or reuse.
+
+---
+
 ### Full query example
 
 ```bash
@@ -558,6 +592,40 @@ pldatacli pivot sales.parquet \
   --aggregate count \
   --output pivot.parquet
 ```
+
+---
+
+### Generate YAML pipeline from pivot
+
+Use `--generate-yaml` (or `-y`) to export the current pivot configuration as a reusable YAML pipeline file. The pivot results are still printed to the terminal as normal.
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --index Region \
+  --on Category \
+  --values Sales \
+  --aggregate sum \
+  --generate-yaml my_pivot.yaml
+```
+
+With date truncation and output:
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --truncate "Order Date:quarter" \
+  --index "Order Date_quarter" \
+  --index Region \
+  --on Category \
+  --values Revenue \
+  --aggregate mean \
+  --round 1 \
+  --output quarterly_pivot.csv \
+  --generate-yaml quarterly_pivot.yaml
+```
+
+The generated YAML can then be run directly with `pldatacli run quarterly_pivot.yaml`.
+
+> ⚡ Tip: Use `--generate-yaml` to snapshot a pivot configuration into a YAML file for scheduled runs or sharing with teammates.
 
 ---
 
