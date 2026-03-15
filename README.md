@@ -347,6 +347,19 @@ round: 2
 output: monthly_west.csv
 ```
 
+Example: `pivot.yaml`
+
+```yaml
+file: Superstore.csv
+truncate: "Order Date:month"
+pivot:
+  column: "Region"
+  index: "Order Date_month"
+  values: "Profit"
+  aggregate: "sum"
+round: 2
+```
+
 > ⚡ Tip: Store your YAML query files in version control alongside your data pipelines for reproducible analysis.
 
 ---

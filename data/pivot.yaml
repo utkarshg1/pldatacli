@@ -1,0 +1,9 @@
+file: Superstore.csv
+truncate: "Order Date:month"
+pivot:
+  column: "Region"
+  index: "Order Date_month"
+  values: "Profit"
+  aggregate: "sum"
+round: 2
+output: "pivot_results.parquet"
