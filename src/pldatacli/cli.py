@@ -14,6 +14,7 @@ from pldatacli.commands.export import apply_export
 from pldatacli.commands.run import run_from_yaml
 from pldatacli.render.table import render_df, render_schema
 from pldatacli.commands.sql import run_sql
+from pldatacli.commands.pivot import pivot_command
 import importlib.metadata
 
 __version__ = importlib.metadata.version("pldatacli")
@@ -208,6 +209,57 @@ def sql(
         sql=sql,
         head=head,
         tail=tail,
+        output=output,
+    )
+
+
+@app.command()
+def pivot(
+    file: Path = typer.Argument(..., help="Input file (csv, parquet, ndjson, …)"),
+    truncate: Optional[str] = typer.Option(
+        None,
+        "--truncate",
+        "-t",
+        help="Truncate datetime columns, e.g. 'Order Date:month'",
+    ),
+    on: str = typer.Option(
+        ..., "--on", "-p", help="Column whose **unique values** become new columns"
+    ),
+    index: List[str] = typer.Option(
+        [], "--index", "-i", help="Row grouping column(s) — repeat for multi-index"
+    ),
+    values: str = typer.Option(
+        ..., "--values", "-v", help="Column to aggregate and place in the cells"
+    ),
+    aggregate: str = typer.Option(
+        "sum",
+        "--aggregate",
+        "-a",
+        help="Aggregation: sum, mean, min, max, first, last, median, count, len",
+    ),
+    round_digits: Optional[int] = typer.Option(
+        None, "--round", help="Round numeric values to N decimal places"
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Save result (csv/parquet/… by extension)"
+    ),
+):
+    """
+    Create a pivot table (like spreadsheet pivot / pandas pivot_table).
+
+    Examples:
+        pldatacli pivot sales.parquet --index Region --on Category --values Sales --aggregate sum
+        pldatacli pivot orders.parquet -i Region -p "Ship Mode" -v OrderID -a count -o pivot.parquet
+        pldatacli pivot data.csv --on Product --values Revenue --index Year Quarter --aggregate mean --round 1
+    """
+    pivot_command(
+        file=file,
+        truncate=truncate,
+        index=index,
+        on=on,
+        values=values,
+        aggregate=aggregate,
+        round_digits=round_digits,
         output=output,
     )
 

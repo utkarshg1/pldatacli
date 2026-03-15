@@ -1,6 +1,6 @@
 [project]
 name = "pldatacli"
-version = "0.1.8"
+version = "0.1.9"
 description = "A data analysis cli tool using polars lazyframes"
 readme = "README.md"
 authors = [

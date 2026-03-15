@@ -44,6 +44,7 @@ brew install pldatacli
 | `schema` | Inspect columns, dtypes, and null counts                 |
 | `run`    | Execute a multi-step pipeline defined in a YAML file     |
 | `sql`    | Run arbitrary SQL queries against one or more files      |
+| `pivot`  | Create pivot tables with flexible aggregations           |
 
 ---
 
@@ -424,6 +425,137 @@ pldatacli sql orders.csv customers.csv \
   --sql-file analysis.sql \
   --head 50 \
   --output joined_results.csv
+```
+
+---
+
+## `pivot` — Pivot Tables
+
+Create spreadsheet-style pivot tables with flexible row groupings, column expansion, and aggregations.
+
+```bash
+pldatacli pivot FILE [OPTIONS]
+```
+
+`--on` defines the column whose unique values become new columns, `--index` sets the row grouping, and `--values` is the column to aggregate.
+
+---
+
+### Basic pivot
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --index Region \
+  --on Category \
+  --values Sales \
+  --aggregate sum
+```
+
+---
+
+### Multi-index pivot
+
+Group rows by multiple columns:
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --index Region \
+  --index "Ship Mode" \
+  --on Category \
+  --values Sales \
+  --aggregate sum
+```
+
+---
+
+### Supported aggregations
+
+| Aggregation | Description              |
+|-------------|--------------------------|
+| `sum`       | Total (default)          |
+| `mean`      | Average                  |
+| `min`       | Minimum value            |
+| `max`       | Maximum value            |
+| `first`     | First occurrence         |
+| `last`      | Last occurrence          |
+| `median`    | Median value             |
+| `count`     | Count of non-null values |
+| `len`       | Row count                |
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --index Region \
+  --on "Ship Mode" \
+  --values OrderID \
+  --aggregate count
+```
+
+---
+
+### Pivot with date truncation
+
+Combine `--truncate` with pivot to analyse trends over time:
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --truncate "Order Date:month" \
+  --index "Order Date_month" \
+  --on Category \
+  --values Sales \
+  --aggregate sum
+```
+
+---
+
+### Rounding pivot results
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --index Region \
+  --on Category \
+  --values Profit \
+  --aggregate mean \
+  --round 2
+```
+
+---
+
+### Save pivot output to file
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --index Region \
+  --on Category \
+  --values Sales \
+  --aggregate sum \
+  --output pivot.csv
+```
+
+Save as Parquet:
+
+```bash
+pldatacli pivot sales.parquet \
+  --index Region \
+  --on "Ship Mode" \
+  --values OrderID \
+  --aggregate count \
+  --output pivot.parquet
+```
+
+---
+
+### Full pivot example
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --truncate "Order Date:quarter" \
+  --index "Order Date_quarter" \
+  --index Region \
+  --on Category \
+  --values Revenue \
+  --aggregate mean \
+  --round 1 \
+  --output quarterly_pivot.csv
 ```
 
 ---
