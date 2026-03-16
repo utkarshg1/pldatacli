@@ -7,6 +7,7 @@ import typer
 
 from pldatacli.io.loader import load_lazyframe
 from pldatacli.render.table import render_df
+from pldatacli.commands.filter import apply_filters
 from pldatacli.commands.export import apply_export
 from pldatacli.commands.rounding import apply_round
 from pldatacli.commands.truncate import apply_truncate
@@ -14,6 +15,7 @@ from pldatacli.commands.truncate import apply_truncate
 
 def pivot_command(
     file: Path,
+    filters: Optional[List[str]],
     index: List[str],
     on: str,
     values: str,
@@ -45,6 +47,7 @@ def pivot_command(
 
     lf = load_lazyframe(file)
 
+    lf = apply_filters(lf, filters)
     # Before the main pivot
     unique_on = (
         lf.select(pl.col(on).unique())

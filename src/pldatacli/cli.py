@@ -271,6 +271,12 @@ def sql(
 @app.command()
 def pivot(
     file: Path = typer.Argument(..., help="Input file (csv, parquet, ndjson, …)"),
+    filter: List[str] = typer.Option(
+        None,
+        "--filter",
+        "-f",
+        help="Filter expressions like 'Sales > 100' or 'Region:West'",
+    ),
     truncate: Optional[str] = typer.Option(
         None,
         "--truncate",
@@ -315,6 +321,7 @@ def pivot(
     """
     pivot_command(
         file=file,
+        filters=filter,
         truncate=truncate,
         index=index,
         on=on,
@@ -328,6 +335,7 @@ def pivot(
 
         generate_pivot_yaml(
             file=file,
+            filter=filter,
             truncate=truncate,
             on=on,
             index=index,

@@ -44,6 +44,7 @@ def run_from_yaml(yaml_path: Path):
 
         pivot_command(
             file=file,
+            filters=cfg.get("filter", None),
             truncate=cfg.get("truncate", None),
             index=index,
             on=column,
