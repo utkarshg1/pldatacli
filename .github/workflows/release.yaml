@@ -1,0 +1,19 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  update-brew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Homebrew tap
+        uses: NSHipster/update-homebrew-formula-action@main
+        with:
+          repository: utkarshg1/pldatacli
+          tap: utkarshg1/homebrew-pldatacli
+          formula: Formula/pldatacli.rb
+        env:
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
