@@ -47,6 +47,8 @@ brew install pldatacli
 | `pivot`  | Create pivot tables with flexible aggregations           |
 | `init`   | Generate a boilerplate YAML pipeline file                |
 
+> ⚡ Tip: `query`, `pivot`, and `run` all support `--dry-run` to preview the pipeline steps without loading or processing any data.
+
 ---
 
 # Usage
@@ -300,6 +302,40 @@ The generated YAML can then be run directly with `pldatacli run monthly_west.yam
 
 ---
 
+### Dry run
+
+Preview the pipeline steps that would be executed without loading or processing any data:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --filter "Sales > 500" \
+  --groupby Region \
+  --agg "Sales:sum" \
+  --sort "Sales_sum:desc" \
+  --dry-run
+```
+
+Example output:
+
+```text
+=== DRY RUN: query ===
+  Input file           : SampleSuperstore.csv
+  Step 1: filter       → Sales > 500
+  Step 2: truncate     → (none)
+  Step 3: groupby      → Region
+  Step 4: agg          → Sales:sum
+  Step 5: sort         → Sales_sum:desc
+  Step 6: limit        → (none)
+  Step 7: round        → (none)
+  Output               : (display only)
+  Generate YAML        : (none)
+No data was loaded or processed.
+```
+
+> ⚡ Tip: Use `--dry-run` to verify your pipeline arguments are correct before running on large files.
+
+---
+
 ### Full query example
 
 ```bash
@@ -399,6 +435,37 @@ output: pivot_result.csv
 > `index` accepts a single string or a list of strings for multi-index pivots.
 
 > ⚡ Tip: Store your YAML query files in version control alongside your data pipelines for reproducible analysis.
+
+---
+
+### Dry run
+
+Parse the YAML and preview what steps would be executed without loading or processing any data:
+
+```bash
+pldatacli run analysis.yaml --dry-run
+```
+
+Example output for a query pipeline:
+
+```text
+=== DRY RUN: run ===
+  YAML file            : analysis.yaml
+  Input file           : Superstore.csv
+  Output               : monthly_west.csv
+  Pipeline type        : query
+  Step 1: filter       → Region=West
+  Step 2: truncate     → Order Date:month
+  Step 3: groupby      → Order Date_month, Category
+  Step 4: agg          → Profit:sum,mean
+  Step 5: agg          → Sales:sum
+  Step 6: sort         → Profit_sum:desc
+  Step 7: limit        → head 10
+  Step 8: round        → 2 decimal places
+No data was loaded or processed.
+```
+
+> ⚡ Tip: Use `--dry-run` to validate a YAML pipeline before running it on large files. Config errors (missing `file` key, malformed `pivot` block, etc.) are caught and reported immediately.
 
 ---
 
@@ -626,6 +693,41 @@ pldatacli pivot SampleSuperstore.csv \
 The generated YAML can then be run directly with `pldatacli run quarterly_pivot.yaml`.
 
 > ⚡ Tip: Use `--generate-yaml` to snapshot a pivot configuration into a YAML file for scheduled runs or sharing with teammates.
+
+---
+
+### Dry run
+
+Preview the pivot configuration that would be executed without loading or processing any data:
+
+```bash
+pldatacli pivot SampleSuperstore.csv \
+  --index Region \
+  --on Category \
+  --values Sales \
+  --aggregate sum \
+  --dry-run
+```
+
+Example output:
+
+```text
+=== DRY RUN: pivot ===
+  Input file           : SampleSuperstore.csv
+  Step 1: filter       → (none)
+  Step 2: truncate     → (none)
+  Step 3: pivot
+    index              : Region
+    on (columns)       : Category
+    values             : Sales
+    aggregate          : sum
+  Step 4: round        → (none)
+  Output               : (display only)
+  Generate YAML        : (none)
+No data was loaded or processed.
+```
+
+> ⚡ Tip: Use `--dry-run` to confirm your pivot configuration before running it on large files.
 
 ---
 
