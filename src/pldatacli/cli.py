@@ -13,6 +13,7 @@ from pldatacli.commands.schema import schema_command
 from pldatacli.commands.export import apply_export
 from pldatacli.commands.run import run_from_yaml
 from pldatacli.commands.init import init_command
+from pldatacli.commands.dry_run import dry_run_query, dry_run_pivot, dry_run_run
 from pldatacli.render.table import render_df, render_schema
 from pldatacli.commands.sql import run_sql
 from pldatacli.commands.pivot import pivot_command
@@ -21,22 +22,18 @@ import importlib.metadata
 __version__ = importlib.metadata.version("pldatacli")
 
 
-# ── 2. Version callback (prints version and exits early)
 def version_callback(value: bool) -> None:
     if value:
         typer.echo(f"pldatacli version {__version__}")
-        raise typer.Exit()  # important: stops execution
+        raise typer.Exit()
 
 
 app = typer.Typer(
-    # Optional: show help when no command is given
     no_args_is_help=True,
-    # Optional: add --help description for the whole app
     help="Quick EDA CLI powered by Polars — filter, aggregate, SQL, schema, YAML pipelines, etc.",
 )
 
 
-# ── 3. This is the global callback — add --version here
 @app.callback()
 def main(
     version: Optional[bool] = typer.Option(
@@ -44,15 +41,13 @@ def main(
         "--version",
         "-v",
         callback=version_callback,
-        is_eager=True,  # ← crucial: runs before any command
+        is_eager=True,
         help="Show the version and exit.",
     ),
 ):
     """
     pldatacli — Polars-powered terminal data explorer
     """
-    # You can put global setup code here if needed (logging, etc.)
-    # If --version was used, the callback already exited
     pass
 
 
@@ -103,6 +98,11 @@ def query(
         "-y",
         help="Also generate equivalent YAML pipeline (in addition to showing results).",
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Print the pipeline steps that would be executed without loading or processing any data.",
+    ),
 ):
     """
     Quick exploratory analysis on a single file using filters, aggregations, sorting, etc.
@@ -110,7 +110,24 @@ def query(
     Examples:
         pldatacli query Superstore.csv --agg "Profit:sum,mean" --groupby Region --sort "Profit_sum:desc"
         pldatacli query data.csv --filter "Sales > 500" "Category:Technology" --head 10
+        pldatacli query data.csv --filter "Sales > 500" --groupby Region --agg "Sales:sum" --dry-run
     """
+    if dry_run:
+        dry_run_query(
+            file=file,
+            filter=filter,
+            truncate=truncate,
+            groupby=groupby,
+            agg=agg,
+            sort=sort,
+            head=head,
+            tail=tail,
+            round_digits=round_digits,
+            output=output,
+            generate_yaml=generate_yaml,
+        )
+        return
+
     lf = load_lazyframe(file)
     lf = apply_filters(lf, filter)
     lf = apply_truncate(lf, truncate)
@@ -134,7 +151,7 @@ def query(
             head=head,
             tail=tail,
             round_digits=round_digits,
-            output=output,  # your existing --output
+            output=output,
             yaml_path=generate_yaml,
         )
 
@@ -159,13 +176,23 @@ def run(
     yaml_file: Path = typer.Argument(
         ..., help="Path to the YAML file containing the analysis pipeline"
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Parse the YAML and print what steps would be executed without loading or processing any data.",
+    ),
 ):
     """
     Execute a multi-step analysis defined in a YAML file.
 
     Example:
         pldatacli run analysis.yaml
+        pldatacli run analysis.yaml --dry-run
     """
+    if dry_run:
+        dry_run_run(yaml_file)
+        return
+
     run_from_yaml(yaml_file)
 
 
@@ -186,7 +213,7 @@ def init(
     Generate a boilerplate YAML pipeline file with commented examples.
 
     Creates a ready-to-edit YAML file for use with `pldatacli run`.
-    Will not overwrite an existing file — use --output to choose a different path.
+    Will not overwrite an existing file -- use --output to choose a different path.
 
     Examples:
 
@@ -270,7 +297,7 @@ def sql(
 
 @app.command()
 def pivot(
-    file: Path = typer.Argument(..., help="Input file (csv, parquet, ndjson, …)"),
+    file: Path = typer.Argument(..., help="Input file (csv, parquet, ndjson, ...)"),
     filter: List[str] = typer.Option(
         None,
         "--filter",
@@ -287,7 +314,7 @@ def pivot(
         ..., "--on", "-p", help="Column whose **unique values** become new columns"
     ),
     index: List[str] = typer.Option(
-        [], "--index", "-i", help="Row grouping column(s) — repeat for multi-index"
+        [], "--index", "-i", help="Row grouping column(s) -- repeat for multi-index"
     ),
     values: str = typer.Option(
         ..., "--values", "-v", help="Column to aggregate and place in the cells"
@@ -302,13 +329,18 @@ def pivot(
         None, "--round", help="Round numeric values to N decimal places"
     ),
     output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Save result (csv/parquet/… by extension)"
+        None, "--output", "-o", help="Save result (csv/parquet/... by extension)"
     ),
     generate_yaml: Optional[Path] = typer.Option(
         None,
         "--generate-yaml",
         "-y",
         help="Also generate equivalent YAML pipeline (in addition to showing results).",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Print the pivot configuration that would be executed without loading or processing any data.",
     ),
 ):
     """
@@ -318,7 +350,23 @@ def pivot(
         pldatacli pivot sales.parquet --index Region --on Category --values Sales --aggregate sum
         pldatacli pivot orders.parquet -i Region -p "Ship Mode" -v OrderID -a count -o pivot.parquet
         pldatacli pivot data.csv --on Product --values Revenue --index Year Quarter --aggregate mean --round 1
+        pldatacli pivot data.csv --index Region --on Category --values Sales --aggregate sum --dry-run
     """
+    if dry_run:
+        dry_run_pivot(
+            file=file,
+            filter=filter,
+            truncate=truncate,
+            on=on,
+            index=index,
+            values=values,
+            aggregate=aggregate,
+            round_digits=round_digits,
+            output=output,
+            generate_yaml=generate_yaml,
+        )
+        return
+
     pivot_command(
         file=file,
         filters=filter,
