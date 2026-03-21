@@ -9,7 +9,8 @@ without loading or processing any data.
 import yaml
 import typer
 from pathlib import Path
-from typing import List, Optional
+
+from pldatacli.commands.run import _as_list
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -25,34 +26,25 @@ def _footer() -> None:
     typer.echo(typer.style("No data was loaded or processed.", fg=typer.colors.YELLOW))
 
 
-def _fmt_round(round_digits: Optional[int]) -> str:
+def _fmt_round(round_digits: int | None) -> str:
     return f"{round_digits} decimal places" if round_digits is not None else "(none)"
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
-
-
-def dry_run_query(
-    file: Path,
-    filter: List[str],
-    truncate: Optional[str],
-    groupby: List[str],
-    agg: List[str],
-    sort: List[str],
-    head: Optional[int],
-    tail: Optional[int],
-    round_digits: Optional[int],
-    output: Optional[Path],
-    generate_yaml: Optional[Path],
+def _show_query_steps(
+    filters: list,
+    truncate: str | None,
+    groupby: list,
+    agg: list,
+    sort: list,
+    head: int | None,
+    tail: int | None,
+    round_digits: int | None,
 ) -> None:
-    """Print the query pipeline steps without executing anything."""
-    _header("query")
-    typer.echo(f"  {'Input file':<20}: {file}")
-
+    """Print the standard query pipeline steps (filter → truncate → groupby/agg → sort → limit → round)."""
     step = 1
 
-    if filter:
-        for f in filter:
+    if filters:
+        for f in filters:
             typer.echo(f"  Step {step}: filter       → {f}")
             step += 1
     else:
@@ -96,33 +88,21 @@ def dry_run_query(
 
     typer.echo(f"  Step {step}: round        → {_fmt_round(round_digits)}")
 
-    typer.echo(f"  {'Output':<20}: {output if output else '(display only)'}")
-    typer.echo(
-        f"  {'Generate YAML':<20}: {generate_yaml if generate_yaml else '(none)'}"
-    )
-    _footer()
 
-
-def dry_run_pivot(
-    file: Path,
-    filter: List[str],
-    truncate: Optional[str],
-    on: str,
-    index: List[str],
+def _show_pivot_steps(
+    filters: list,
+    truncate: str | None,
+    index: list,
+    on_col: str,
     values: str,
     aggregate: str,
-    round_digits: Optional[int],
-    output: Optional[Path],
-    generate_yaml: Optional[Path],
+    round_digits: int | None,
 ) -> None:
-    """Print the pivot pipeline config without executing anything."""
-    _header("pivot")
-    typer.echo(f"  {'Input file':<20}: {file}")
-
+    """Print the pivot pipeline steps (filter → truncate → pivot → round)."""
     step = 1
 
-    if filter:
-        for f in filter:
+    if filters:
+        for f in filters:
             typer.echo(f"  Step {step}: filter       → {f}")
             step += 1
     else:
@@ -134,13 +114,57 @@ def dry_run_pivot(
 
     typer.echo(f"  Step {step}: pivot")
     typer.echo(f"    {'index':<18}: {', '.join(index) if index else '(none)'}")
-    typer.echo(f"    {'on (columns)':<18}: {on}")
+    typer.echo(f"    {'on (column)':<18}: {on_col}")
     typer.echo(f"    {'values':<18}: {values}")
     typer.echo(f"    {'aggregate':<18}: {aggregate}")
     step += 1
 
     typer.echo(f"  Step {step}: round        → {_fmt_round(round_digits)}")
 
+
+# ── Public API ────────────────────────────────────────────────────────────────
+
+
+def dry_run_query(
+    file: Path,
+    filter: list[str],
+    truncate: str | None,
+    groupby: list[str],
+    agg: list[str],
+    sort: list[str],
+    head: int | None,
+    tail: int | None,
+    round_digits: int | None,
+    output: Path | None,
+    generate_yaml: Path | None,
+) -> None:
+    """Print the query pipeline steps without executing anything."""
+    _header("query")
+    typer.echo(f"  {'Input file':<20}: {file}")
+    _show_query_steps(filter, truncate, groupby, agg, sort, head, tail, round_digits)
+    typer.echo(f"  {'Output':<20}: {output if output else '(display only)'}")
+    typer.echo(
+        f"  {'Generate YAML':<20}: {generate_yaml if generate_yaml else '(none)'}"
+    )
+    _footer()
+
+
+def dry_run_pivot(
+    file: Path,
+    filter: list[str],
+    truncate: str | None,
+    on: str,
+    index: list[str],
+    values: str,
+    aggregate: str,
+    round_digits: int | None,
+    output: Path | None,
+    generate_yaml: Path | None,
+) -> None:
+    """Print the pivot pipeline config without executing anything."""
+    _header("pivot")
+    typer.echo(f"  {'Input file':<20}: {file}")
+    _show_pivot_steps(filter, truncate, index, on, values, aggregate, round_digits)
     typer.echo(f"  {'Output':<20}: {output if output else '(display only)'}")
     typer.echo(
         f"  {'Generate YAML':<20}: {generate_yaml if generate_yaml else '(none)'}"
@@ -214,7 +238,7 @@ def dry_run_run(yaml_file: Path) -> None:
 
         column = pivot_cfg.get("column", None)
         values = pivot_cfg.get("values", None)
-        index = pivot_cfg.get("index", [])
+        index = _as_list(pivot_cfg.get("index"))
         aggregate = pivot_cfg.get("aggregate", "sum")
 
         if not column or not values:
@@ -230,107 +254,28 @@ def dry_run_run(yaml_file: Path) -> None:
             )
             raise typer.Exit(1)
 
-        if isinstance(index, str):
-            index = [index]
-
-        step = 1
-        filters = cfg.get("filter", None)
-        if filters:
-            filters = [filters] if isinstance(filters, str) else filters
-            for f in filters:
-                typer.echo(f"  Step {step}: filter       → {f}")
-                step += 1
-        else:
-            typer.echo(f"  Step {step}: filter       → (none)")
-            step += 1
-
-        truncate = cfg.get("truncate", None)
-        typer.echo(
-            f"  Step {step}: truncate     → {truncate if truncate else '(none)'}"
-        )
-        step += 1
-
-        typer.echo(f"  Step {step}: pivot")
-        typer.echo(f"    {'index':<18}: {', '.join(index) if index else '(none)'}")
-        typer.echo(f"    {'on (column)':<18}: {column}")
-        typer.echo(f"    {'values':<18}: {values}")
-        typer.echo(f"    {'aggregate':<18}: {aggregate}")
-        step += 1
-
-        typer.echo(
-            f"  Step {step}: round        → {_fmt_round(cfg.get('round', None))}"
+        _show_pivot_steps(
+            filters=_as_list(cfg.get("filter")),
+            truncate=cfg.get("truncate", None),
+            index=index,
+            on_col=column,
+            values=values,
+            aggregate=aggregate,
+            round_digits=cfg.get("round", None),
         )
 
     # ── Standard query branch ─────────────────────────────────────────────────
     else:
         typer.echo(f"  {'Pipeline type':<20}: query")
-
-        filters = cfg.get("filter", [])
-        groupby = cfg.get("groupby", [])
-        agg = cfg.get("agg", [])
-        sort = cfg.get("sort", [])
-
-        if isinstance(filters, str):
-            filters = [filters]
-        if isinstance(groupby, str):
-            groupby = [groupby]
-        if isinstance(agg, str):
-            agg = [agg]
-        if isinstance(sort, str):
-            sort = [sort]
-
-        step = 1
-
-        if filters:
-            for f in filters:
-                typer.echo(f"  Step {step}: filter       → {f}")
-                step += 1
-        else:
-            typer.echo(f"  Step {step}: filter       → (none)")
-            step += 1
-
-        truncate = cfg.get("truncate", None)
-        typer.echo(
-            f"  Step {step}: truncate     → {truncate if truncate else '(none)'}"
-        )
-        step += 1
-
-        if groupby or agg:
-            typer.echo(
-                f"  Step {step}: groupby      → {', '.join(groupby) if groupby else '(none)'}"
-            )
-            step += 1
-            if agg:
-                for a in agg:
-                    typer.echo(f"  Step {step}: agg          → {a}")
-                    step += 1
-            else:
-                typer.echo(f"  Step {step}: agg          → (none)")
-                step += 1
-        else:
-            typer.echo(f"  Step {step}: groupby/agg  → (none)")
-            step += 1
-
-        if sort:
-            for s in sort:
-                typer.echo(f"  Step {step}: sort         → {s}")
-                step += 1
-        else:
-            typer.echo(f"  Step {step}: sort         → (none)")
-            step += 1
-
-        head = cfg.get("head", None)
-        tail = cfg.get("tail", None)
-        if head is not None:
-            typer.echo(f"  Step {step}: limit        → head {head}")
-        elif tail is not None:
-            typer.echo(f"  Step {step}: limit        → tail {tail}")
-        else:
-            typer.echo(f"  Step {step}: limit        → (none)")
-        step += 1
-
-        typer.echo(
-            f"  Step {step}: round        → {_fmt_round(cfg.get('round', None))}"
+        _show_query_steps(
+            filters=_as_list(cfg.get("filter")),
+            truncate=cfg.get("truncate", None),
+            groupby=_as_list(cfg.get("groupby")),
+            agg=_as_list(cfg.get("agg")),
+            sort=_as_list(cfg.get("sort")),
+            head=cfg.get("head", None),
+            tail=cfg.get("tail", None),
+            round_digits=cfg.get("round", None),
         )
 
     _footer()

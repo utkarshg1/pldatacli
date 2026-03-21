@@ -1,6 +1,6 @@
 # pldatacli
 
-A simple command-line tool for quick CSV data analysis using Polars, with lazy execution for efficiency.
+A command-line tool for quick data analysis using Polars, with lazy execution for efficiency. Supports CSV, Parquet, and NDJSON files.
 
 ---
 
@@ -9,6 +9,7 @@ A simple command-line tool for quick CSV data analysis using Polars, with lazy e
 * **Polars** – fast DataFrame engine with lazy execution for efficient data processing
 * **Typer** – modern CLI framework for building command-line interfaces
 * **Rich** – beautiful terminal rendering for clean table output
+* **PyYAML** – YAML pipeline file parsing
 
 ---
 
@@ -33,6 +34,18 @@ uv tool install pldatacli
 brew tap utkarshg1/pldatacli
 brew install pldatacli
 ```
+
+---
+
+# Supported File Formats
+
+| Format   | Extensions          | Read | Write |
+|----------|---------------------|------|-------|
+| CSV      | `.csv`              | ✓    | ✓     |
+| Parquet  | `.parquet`          | ✓    | ✓     |
+| NDJSON   | `.ndjson`, `.jsonl` | ✓    | ✓     |
+
+All commands that accept a file input (`query`, `schema`, `run`, `sql`, `pivot`) support all three formats. Output (`--output`) is determined by the file extension you provide.
 
 ---
 
@@ -69,19 +82,21 @@ SampleSuperstore.csv
 
 ### Filter rows
 
+Supported operators: `=`, `!=`, `>`, `<`, `>=`, `<=`
+
 Single filter:
 
 ```bash
 pldatacli query SampleSuperstore.csv \
-  --filter "State:Texas"
+  --filter "State = Texas"
 ```
 
 Multiple filters:
 
 ```bash
 pldatacli query SampleSuperstore.csv \
-  --filter "State:Texas" \
-  --filter "Category:Furniture"
+  --filter "State = Texas" \
+  --filter "Category = Furniture"
 ```
 
 Numeric filter:
@@ -152,6 +167,8 @@ pldatacli query SampleSuperstore.csv \
 ---
 
 ### Aggregations
+
+Supported aggregation operations for `query`: `sum`, `mean`, `max`, `min`, `std`, `count`, `distinct_count`
 
 Single aggregation:
 
@@ -262,6 +279,15 @@ pldatacli query SampleSuperstore.csv \
   --groupby Region \
   --agg "Profit:sum" \
   --output result.parquet
+```
+
+Save results as NDJSON:
+
+```bash
+pldatacli query SampleSuperstore.csv \
+  --groupby Region \
+  --agg "Profit:sum" \
+  --output result.ndjson
 ```
 
 > ⚡ Tip: Results are always printed to the terminal **and** saved to file simultaneously.
@@ -718,7 +744,7 @@ Example output:
   Step 2: truncate     → (none)
   Step 3: pivot
     index              : Region
-    on (columns)       : Category
+    on (column)        : Category
     values             : Sales
     aggregate          : sum
   Step 4: round        → (none)
@@ -836,3 +862,23 @@ or
 ```bash
 pldatacli -v
 ```
+
+---
+
+# Development
+
+Clone the repo and install with dev dependencies:
+
+```bash
+git clone https://github.com/utkarshg1/pldatacli
+cd pldatacli
+uv sync --group dev
+```
+
+Run the test suite:
+
+```bash
+uv run pytest tests/ -v
+```
+
+The tests cover parsers, command logic, file loading (CSV/Parquet/NDJSON), and end-to-end YAML pipeline execution.

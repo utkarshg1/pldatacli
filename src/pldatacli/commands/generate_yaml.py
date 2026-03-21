@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 import yaml
 import typer
-from typing import List, Optional
 
 
 def _write_yaml_with_header(data: dict, yaml_path: Path, command: str) -> None:
@@ -84,7 +83,7 @@ def generate_query_yaml(
 
 def generate_pivot_yaml(
     file: Path,
-    filter: Optional[List[str]],
+    filter: list[str] | None,
     truncate: str | None,
     on: str,
     index: list[str],

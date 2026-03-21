@@ -12,6 +12,15 @@ from pldatacli.commands.pivot import pivot_command
 from pldatacli.render.table import render_df
 
 
+def _as_list(val) -> list:
+    """Coerce a YAML scalar-or-list value to a list."""
+    if val is None:
+        return []
+    if isinstance(val, str):
+        return [val]
+    return list(val)
+
+
 def run_from_yaml(yaml_path: Path):
     with open(yaml_path) as f:
         cfg = yaml.safe_load(f)
@@ -56,20 +65,10 @@ def run_from_yaml(yaml_path: Path):
         return
 
     # ── Standard agg/groupby branch ───────────────────────────────────────────
-    filters = cfg.get("filter", [])
-    groupby = cfg.get("groupby", [])
-    agg = cfg.get("agg", [])
-    sort = cfg.get("sort", [])
-
-    # Ensure all list fields are actually lists
-    if isinstance(filters, str):
-        filters = [filters]
-    if isinstance(groupby, str):
-        groupby = [groupby]
-    if isinstance(agg, str):
-        agg = [agg]
-    if isinstance(sort, str):
-        sort = [sort]
+    filters = _as_list(cfg.get("filter"))
+    groupby = _as_list(cfg.get("groupby"))
+    agg = _as_list(cfg.get("agg"))
+    sort = _as_list(cfg.get("sort"))
 
     lf = load_lazyframe(file)
     lf = apply_filters(lf, filters)

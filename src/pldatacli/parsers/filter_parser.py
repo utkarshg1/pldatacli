@@ -5,10 +5,10 @@ def cast_value(v):
 
     try:
         return int(v)
-    except:
+    except (ValueError, TypeError):
         try:
             return float(v)
-        except:
+        except (ValueError, TypeError):
             return v
 
 
@@ -16,8 +16,8 @@ def parse_filter(expr):
 
     for op in OPERATORS:
         if op in expr:
-            col, val = expr.split(op)
+            col, val = expr.split(op, maxsplit=1)
 
             return col.strip(), op, cast_value(val.strip())
 
-    raise ValueError("Invalid filter expression")
+    raise ValueError(f"Invalid filter expression: {repr(expr)}")

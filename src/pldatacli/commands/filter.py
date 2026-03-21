@@ -19,6 +19,7 @@ def build_expr(col, op, val):
         return c >= val
     if op == "<=":
         return c <= val
+    raise ValueError(f"Unknown operator: {repr(op)}")
 
 
 def apply_filters(lf: pl.LazyFrame, filters):

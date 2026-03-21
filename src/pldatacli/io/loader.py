@@ -10,4 +10,7 @@ def load_lazyframe(path: Path) -> pl.LazyFrame:
     if path.suffix == ".parquet":
         return pl.scan_parquet(path)
 
-    raise ValueError("Unsupported File Format")
+    if path.suffix in (".ndjson", ".jsonl"):
+        return pl.scan_ndjson(path)
+
+    raise ValueError(f"Unsupported file format: '{path.suffix}'. Use .csv, .parquet, .ndjson, or .jsonl")

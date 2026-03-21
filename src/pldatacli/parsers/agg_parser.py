@@ -20,9 +20,12 @@ def parse_aggs(agg_strings):
     exprs = []
 
     for a in agg_strings:
-        col, ops = a.split(":")
+        col, ops = a.rsplit(":", maxsplit=1)
 
         for op in ops.split(","):
+            if op not in AGG_MAP:
+                supported = ", ".join(AGG_MAP)
+                raise ValueError(f"Unknown aggregation '{op}'. Supported: {supported}")
             exprs.append(AGG_MAP[op](col).alias(f"{col}_{op}"))
 
     return exprs

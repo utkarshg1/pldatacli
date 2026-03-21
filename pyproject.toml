@@ -1,6 +1,6 @@
 [project]
 name = "pldatacli"
-version = "0.2.0"
+version = "0.3.0"
 description = "A data analysis cli tool using polars lazyframes"
 readme = "README.md"
 authors = [
@@ -16,6 +16,9 @@ dependencies = [
 
 [project.scripts]
 pldatacli = "pldatacli.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
 
 [build-system]
 requires = ["uv_build>=0.10.9,<0.11.0"]
